@@ -109,25 +109,45 @@ class Font extends PDFObject
             return $this->table[$dec];
         }
 
+
+        return $this->translateCharAsUnicodeCodePoints($char);
         // fallback for decoding single-byte ANSI characters that are not in the lookup table
-        $fallbackDecoded = $char;
-        if (
-            \strlen($char) < 2
-            && $this->has('Encoding')
-            && $this->get('Encoding') instanceof Encoding
-        ) {
-            try {
-                if (WinAnsiEncoding::class === $this->get('Encoding')->__toString()) {
-                    $fallbackDecoded = self::uchr($dec);
-                }
-            } catch (EncodingNotFoundException $e) {
-                // Encoding->getEncodingClass() throws EncodingNotFoundException when BaseEncoding doesn't exists
-                // See table 5.11 on PDF 1.5 specs for more info
-            }
+//        $fallbackDecoded = $char;
+//        if (
+//            \strlen($char) < 2
+//            && $this->has('Encoding')
+//            && $this->get('Encoding') instanceof Encoding
+//        ) {
+//            try {
+//                if (WinAnsiEncoding::class === $this->get('Encoding')->__toString()) {
+//                    $fallbackDecoded = self::uchr($dec);
+//                }
+//            } catch (EncodingNotFoundException $e) {
+//                // Encoding->getEncodingClass() throws EncodingNotFoundException when BaseEncoding doesn't exists
+//                // See table 5.11 on PDF 1.5 specs for more info
+//            }
+//        }
+//
+//        return $use_default ? self::MISSING : $fallbackDecoded;
+    }
+
+    private function translateCharAsUnicodeCodePoints(string $char): string
+    {
+        $length = strlen($char);
+
+        $ret = '';
+
+        for ($i = 0; $i < $length; $i++) {
+            $pointer = $char[$i];
+
+            $dec = hexdec(bin2hex($pointer));
+            $resultChar = self::uchr($dec);
+            $ret .= $resultChar;
         }
 
-        return $use_default ? self::MISSING : $fallbackDecoded;
+        return $ret;
     }
+
 
     public static function uchr(int $code): string
     {
